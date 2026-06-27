@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>SHADOW COMPANY | TACTICAL OPS</title>
+    <style>
+        body { margin: 0; background: #000; color: #ff003c; font-family: 'Courier New', monospace; overflow: hidden; }
+        #lobby, #gameOver { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; }
+        #gameOver { display: none; }
+        canvas { display: none; background: #050505; cursor: none; }
+        .btn { border: 2px solid #ff003c; padding: 15px 30px; cursor: pointer; background: transparent; color: #ff003c; font-weight: bold; margin-top: 10px; width: 220px; }
+        select { background: #111; color: #ff003c; border: 1px solid #ff003c; padding: 10px; width: 220px; margin: 5px; }
+        
+        /* استایل اختصاصی برای امضای شما */
+        footer { position: fixed; bottom: 10px; width: 100%; text-align: center; opacity: 0.5; font-size: 0.7rem; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="lobby">
+    <h1>SHADOW COMPANY</h1>
+    <input type="color" id="pColor" value="#ff003c">
+    <select id="diff">
+        <option value="4">سختی: آسان</option>
+        <option value="8">سختی: متوسط</option>
+        <option value="14">سختی: سخت</option>
+    </select>
+    <select id="mode">
+        <option value="sensor">کنترل: سنسور گوشی</option>
+        <option value="touch">کنترل: لمسی (انگشت)</option>
+    </select>
+    <button class="btn" onclick="startGame()">شروع عملیات</button>
+</div>
+
+<div id="gameOver">
+    <h1>مأموریت شکست خورد!</h1>
+    <button class="btn" onclick="resetToLobby()">بازگشت به لابی</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<footer>Made by kaveh glitch</footer>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let player = { x: 0, y: 0, color: '#ff003c' };
+    let bullets = [], gameActive = false, bulletSpeed = 4, controlMode = 'sensor';
+
+    function startGame() {
+        document.getElementById('lobby').style.display = 'none';
+        canvas.style.display = 'block';
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        player.y = canvas.height - 100;
+        player.color = document.getElementById('pColor').value;
+        bulletSpeed = parseInt(document.getElementById('diff').value);
+        controlMode = document.getElementById('mode').value;
+        gameActive = true;
+        animate();
+    }
+
+    function resetToLobby() {
+        document.getElementById('gameOver').style.display = 'none';
+        document.getElementById('lobby').style.display = 'flex';
+        bullets = []; gameActive = false;
+    }
+
+    window.addEventListener('deviceorientation', (e) => {
+        if(controlMode === 'sensor') player.x = (e.gamma + 90) * (canvas.width / 180);
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if(controlMode === 'touch') player.x = e.touches[0].clientX;
+    });
+
+    function animate() {
+        if (!gameActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = player.color;
+        ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, Math.PI*2); ctx.fill();
+
+        if(Math.random() < 0.08) bullets.push({x: Math.random() * canvas.width, y: 0});
+        
+        bullets.forEach((b, index) => {
+            b.y += bulletSpeed;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(b.x, b.y, 15, 15);
+
+            if(Math.hypot(player.x - b.x, player.y - b.y) < 25) {
+                gameActive = false;
+                canvas.style.display = 'none';
+                document.getElementById('gameOver').style.display = 'flex';
+            }
+            if(b.y > canvas.height) bullets.splice(index, 1);
+        });
+        requestAnimationFrame(animate);
+    }
+</script>
+</body>
+</html>
